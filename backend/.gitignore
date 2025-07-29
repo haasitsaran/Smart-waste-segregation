@@ -20,5 +20,6 @@ coverage.xml
 
 # YOLO model files
 *.pt
+.env
 
 
