@@ -26,7 +26,7 @@ const Hero = () => {
           </div>
           <div className="flex items-center space-x-12 pt-8">
             <div>
-              <p className="text-3xl font-bold text-teal-600">95%</p>
+              <p className="text-3xl font-bold text-teal-600">80%+</p>
               <p className="text-gray-500">Accuracy</p>
             </div>
             <div>

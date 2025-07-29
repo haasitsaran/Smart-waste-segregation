@@ -1,5 +1,8 @@
 Flask==3.0.3
 Flask-Cors==4.0.1
-ultralytics==8.2.2
+ultralytics==8.0.220
 opencv-python==4.9.0.80
 numpy==1.26.4
+torch==2.1.0
+torchvision==0.16.0
+torchaudio==2.1.0

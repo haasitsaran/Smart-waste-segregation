@@ -1,15 +1,32 @@
 import React from 'react';
 import FeatureCard from './FeatureCard';
-import { FiCamera, FiCpu, FiMessageSquare, FiZap, FiAward, FiMapPin } from 'react-icons/fi';
+// Import the necessary icons
+import { FiMessageSquare, FiMapPin, FiClock } from 'react-icons/fi';
 
 const iconClass = "w-6 h-6 text-green-600";
+
+// Updated data array with 'to' properties for routing
 const featuresData = [
-  { icon: <FiCamera className={iconClass} />, title: "Live Detection", description: "Real-time AI identifies waste types with 95% accuracy using your phone camera.", linkText: "Try Scanner" },
-  { icon: <FiCpu className={iconClass} />, title: "Upcycle Ideas", description: "Get creative video tutorials to turn waste into wonderful crafts and useful items.", linkText: "Browse Videos" },
-  { icon: <FiMessageSquare className={iconClass} />, title: "Report Litter", description: "Help clean your community by reporting litter spots with GPS location.", linkText: "Make Report" },
-  { icon: <FiZap className={iconClass} />, title: "Eco Tips", description: "Daily environmental facts and tips to reduce waste and live more sustainably.", linkText: "Learn More" },
-  { icon: <FiAward className={iconClass} />, title: "Earn Rewards", description: "Collect points, unlock badges, and compete with friends on leaderboards.", linkText: "View Progress" },
-  { icon: <FiMapPin className={iconClass} />, title: "Find Centers", description: "Locate nearby recycling centers and get directions to proper disposal facilities.", linkText: "Find Nearby" },
+  { 
+    icon: <FiClock className={iconClass} />, 
+    title: "Detection History", 
+    description: "View your past waste detections and stats.", 
+    linkText: "View History",
+    to: "/history" // Route for the History page
+  },
+  { 
+    icon: <FiMessageSquare className={iconClass} />, 
+    title: "Report Issue", 
+    description: "Help clean your community by reporting litter spots with GPS location.", 
+    linkText: "Report", 
+    to: "/report-issue" // Route for the Report Issue page
+  },
+  { 
+    icon: <FiMapPin className={iconClass} />, 
+    title: "Find Centers", 
+    description: "Locate nearby recycling centers and get directions to proper disposal facilities.", 
+    linkText: "Find Nearby" // This one won't be a link for now
+  },
 ];
 
 const Features = () => {

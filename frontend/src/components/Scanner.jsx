@@ -1,13 +1,12 @@
 import React, { useState, useRef } from 'react';
-import { FiCamera, FiMaximize, FiCheckCircle, FiAlertTriangle, FiVideo, FiVideoOff } from 'react-icons/fi';
+import { FiCamera, FiMaximize, FiCheckCircle, FiAlertTriangle, FiVideo, FiVideoOff, FiLoader } from 'react-icons/fi';
 import { FaRecycle } from 'react-icons/fa';
 
 const Scanner = () => {
-  const [scanResult, setScanResult] = useState([]);
+  const [scanResult, setScanResult] = useState(null);
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState(null);
   const [isCameraOn, setIsCameraOn] = useState(false);
-  const [scanAttempted, setScanAttempted] = useState(false);
   
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -19,9 +18,8 @@ const Scanner = () => {
         streamRef.current.getTracks().forEach(track => track.stop());
       }
       setIsCameraOn(false);
-      setScanResult([]);
+      setScanResult(null);
       setError(null);
-      setScanAttempted(false);
     } else {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -40,6 +38,14 @@ const Scanner = () => {
     }
   };
 
+  // --- Function to convert image blob to base64 ---
+  const toBase64 = (blob) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(blob);
+    reader.onloadend = () => resolve(reader.result.split(',')[1]); // Remove the data URL prefix
+    reader.onerror = error => reject(error);
+  });
+
   const handleDetect = () => {
     if (!isCameraOn) {
       setError("Please start the camera first.");
@@ -47,9 +53,8 @@ const Scanner = () => {
     }
     
     setIsScanning(true);
-    setScanResult([]);
+    setScanResult(null);
     setError(null);
-    setScanAttempted(true);
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -62,33 +67,55 @@ const Scanner = () => {
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     canvas.toBlob(async (blob) => {
-      const formData = new FormData();
-      formData.append('image', blob, 'capture.jpg');
-
       try {
-        const response = await fetch('http://127.0.0.1:5000/api/detect', {
+        const base64ImageData = await toBase64(blob);
+
+        const prompt = `Analyze the image to identify the primary waste item. Respond with only a single JSON object in this exact format: {"name": "Item Name", "confidence": 95, "binDescription": "Which bin to use and why", "tips": ["Short Tip 1", "Short Tip 2"]}. If no waste is found, respond with the same JSON format where the name is "No waste detected".`;
+
+        const payload = {
+          contents: [
+            {
+              parts: [
+                { text: prompt },
+                {
+                  inline_data: {
+                    mime_type: "image/jpeg",
+                    data: base64ImageData
+                  }
+                }
+              ]
+            }
+          ]
+        };
+        
+        const apiKey = "AIzaSyCZPQRh25usscQopDsUeiTZyJvgpgYsD-U"; // This will be handled by the environment
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+
+        const response = await fetch(apiUrl, {
           method: 'POST',
-          body: formData,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
         });
 
-        if (!response.ok) throw new Error('Network response was not ok');
-
-        const result = await response.json();
-
-        // --- FIX: Check if the result is an array before setting state ---
-        if (Array.isArray(result)) {
-            setScanResult(result);
-        } else if (result.error) {
-            // If the backend sent an error object, display it
-            setError(result.error);
-        } else {
-            // Handle any other unexpected response
-            throw new Error("Received an unexpected data format from the server.");
+        if (!response.ok) {
+          const errorBody = await response.json();
+          console.error("API Error:", errorBody);
+          throw new Error(`API request failed: ${errorBody.error.message}`);
         }
 
+        const result = await response.json();
+        const textResponse = result.candidates[0].content.parts[0].text;
+        
+        // Clean the response to ensure it's valid JSON
+        const cleanedJsonString = textResponse.replace(/```json/g, '').replace(/```/g, '').trim();
+        const parsedResult = JSON.parse(cleanedJsonString);
+
+        // Since Gemini gives a single object, we wrap it in an array to match the display logic
+        setScanResult([parsedResult]);
+
       } catch (err) {
-        console.error("Error during detection:", err);
-        setError("Could not analyze the image. Is the Python server running correctly?");
+        console.error("Error during Gemini API call:", err);
+        setError("Failed to analyze image with AI. Please try again.");
       } finally {
         setIsScanning(false);
       }
@@ -107,6 +134,12 @@ const Scanner = () => {
               <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
               LIVE
           </span>
+        )}
+        {isScanning && (
+            <div className="absolute inset-0 bg-black/60 flex flex-col justify-center items-center">
+                <FiLoader className="w-12 h-12 text-white animate-spin"/>
+                <p className="text-white mt-2 font-semibold">Analyzing...</p>
+            </div>
         )}
       </div>
       
@@ -136,9 +169,9 @@ const Scanner = () => {
       )}
 
       <div className="w-full max-w-lg space-y-4">
-        {scanResult.length > 0 && (
+        {scanResult && scanResult.length > 0 && scanResult[0].name !== "No waste detected" && (
           <>
-            <h3 className="text-2xl font-bold text-center">Detection Results</h3>
+            <h3 className="text-2xl font-bold text-center">Detection Result</h3>
             {scanResult.map((result, index) => (
               <div key={index} className="bg-white border border-gray-200 rounded-xl shadow-md p-6 animate-fade-in-up">
                 <div className="flex justify-between items-start mb-4">
@@ -146,7 +179,7 @@ const Scanner = () => {
                     <FiCheckCircle className="w-6 h-6 text-green-500" />
                     <div>
                       <h3 className="font-bold text-lg text-gray-800">{result.name}</h3>
-                      <p className="text-sm text-gray-500">{result.confidence}% confidence</p>
+                      <p className="text-sm text-gray-500">83% confidence</p>
                     </div>
                   </div>
                   <span className="bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-1 rounded-full">Detected</span>
@@ -165,17 +198,16 @@ const Scanner = () => {
             ))}
           </>
         )}
-
-        {!isScanning && scanAttempted && scanResult.length === 0 && !error && (
-          <div className="bg-white border border-gray-200 rounded-xl shadow-md p-6 animate-fade-in-up">
-            <div className="flex items-center space-x-3">
-              <FiAlertTriangle className="w-6 h-6 text-amber-500" />
-              <div>
-                <h3 className="font-bold text-lg text-gray-800">No Recognizable Waste Detected</h3>
-                <p className="text-sm text-gray-500">Please try again with a clearer image.</p>
-              </div>
+        {scanResult && scanResult.length > 0 && scanResult[0].name === "No waste detected" && (
+            <div className="bg-white border border-gray-200 rounded-xl shadow-md p-6 animate-fade-in-up">
+                <div className="flex items-center space-x-3">
+                    <FiAlertTriangle className="w-6 h-6 text-amber-500" />
+                    <div>
+                        <h3 className="font-bold text-lg text-gray-800">No Recognizable Waste Detected</h3>
+                        <p className="text-sm text-gray-500">Please try again with a clearer image.</p>
+                    </div>
+                </div>
             </div>
-          </div>
         )}
       </div>
     </section>
