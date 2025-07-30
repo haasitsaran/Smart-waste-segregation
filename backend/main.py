@@ -195,11 +195,13 @@ def detect_waste_from_image_gemini(image_bytes):
         }
     }
     prompt = (
-        "Analyze the primary subject in this image as a piece of waste. "
-        "Identify the item, estimate your confidence (0-100), "
+        "Analyze this image and identify ALL visible waste items. "
+        "For each waste item you can see, identify the item name, estimate your confidence (0-100), "
         "and provide its proper disposal bin and 2-3 helpful disposal tips. "
         "Format your response as a JSON array according to the provided schema, "
-        "containing only the single, most prominent waste item."
+        "containing ALL waste items visible in the image (not just the most prominent one). "
+        "If you see multiple items, include each one in the array. "
+        "Focus on items that are clearly waste or recyclable materials."
     )
     payload = {
         "contents": [ { "parts": [ {"text": prompt}, { "inline_data": { "mime_type": "image/jpeg", "data": base64_image } } ] } ],
