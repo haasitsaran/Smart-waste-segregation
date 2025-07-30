@@ -6,3 +6,6 @@ numpy==1.26.4
 torch==2.1.0
 torchvision==0.16.0
 torchaudio==2.1.0
+google-api-python-client==2.130.0  
+python-dotenv==1.0.0      
+pymongo==4.8.0     

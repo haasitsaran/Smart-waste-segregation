@@ -6,12 +6,13 @@ import Features from './components/Features';
 import Scanner from './components/Scanner';
 import ReportIssue from './components/ReportIssue';
 import History from './components/History';
+import CraftVideos from './components/CraftVideos';
+import FindCenters from './components/FindCenters';
 
 // 1. Import the ToastContainer and its CSS
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-// A layout component for the main page content
 const MainPage = () => (
   <>
     <Hero />
@@ -40,12 +41,11 @@ function App() {
         <Header />
         <main>
           <Routes>
-            {/* Route for the main page */}
             <Route path="/" element={<MainPage />} />
-            {/* Route for the report issue page */}
             <Route path="/report-issue" element={<ReportIssue />} />
-            {/* Route for the history page */}
             <Route path="/history" element={<History />} />
+            <Route path="/craft-videos" element={<CraftVideos />} />
+            <Route path="/find-nearby" element={<FindCenters />} />
           </Routes>
         </main>
       </div>

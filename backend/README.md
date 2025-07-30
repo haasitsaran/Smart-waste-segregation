@@ -11,6 +11,7 @@ activate the environement : .\venv\Scripts\activate
 
 command : pip install -r requirements.txt
 
-## run the flask server using this command
+## run the flask server using this command(ru two servers)
 
-command : python main.py
+command1 : python main.py
+command2 : python craft.py
